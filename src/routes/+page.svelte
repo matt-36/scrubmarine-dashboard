@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
-	import type { ConnectionStatus, GamepadCommand, SensorData } from '$lib/scrubmarine';
+	import type { ConnectionStatus, GamepadCommand, SensorData, CameraData } from '$lib/scrubmarine';
 	import { onMount, onDestroy } from 'svelte';
 	import GamepadController from '$lib/components/GamepadController.svelte';
+	import VideoStream from '$lib/components/VideoStream.svelte';
+
+	// Camera frame data
+	let frontCameraFrame: string = $state('');
+	let frontCameraResolution: [number, number] = $state([640, 480]);
+	let rearCameraFrame: string = $state('');
+	let rearCameraResolution: [number, number] = $state([640, 480]);
 
 	// stateful so we can update the values when the websocket receives a message
 	let items: Record<string, any> = $state({
@@ -84,9 +91,27 @@
 						// Update UI state variables based on the received data
 						if (message.data.depth) {
 							const depthData = message.data.depth;
-							items['Current depth'] = parseFloat(depthData.depth?.toFixed(4)) || 0;
+							console.log('Depth data:', depthData);
+							items['Current depth'] = parseFloat(depthData.position.alt?.toFixed(4)) || 0;
 							items['Water temperature'] = parseFloat(depthData.temperature?.toFixed(4)) || 0;
 							items['Water pressure'] = parseFloat(depthData.pressure?.toFixed(4)) || 0;
+							position.Latitude = parseFloat(depthData.position.lat)
+							position.Longitude = parseFloat(depthData.position.lon)
+						}
+						
+						 // Process camera frames if available
+						if (message.data.camera_front) {
+							frontCameraFrame = message.data.camera_front.frame;
+							if (message.data.camera_front.resolution) {
+								frontCameraResolution = message.data.camera_front.resolution;
+							}
+						}
+						
+						if (message.data.camera_rear) {
+							rearCameraFrame = message.data.camera_rear.frame;
+							if (message.data.camera_rear.resolution) {
+								rearCameraResolution = message.data.camera_rear.resolution;
+							}
 						}
 						
 						// Update position if available
@@ -267,7 +292,7 @@
 
 	// Call the connect function when the component mounts
 	// This is a placeholder URL, replace with your actual WebSocket server URL
-	const serverUrl = 'ws://172.21.176.250:8080'; // Replace with your WebSocket server URL
+	const serverUrl = 'ws://192.168.1.67:8080'; // Replace with your WebSocket server URL
 	onMount(() => {
 		if (connectToSubCleaner(serverUrl)) {
 			console.log('Connected to SubCleaner WebSocket server');
@@ -316,8 +341,26 @@
 			isOpen={isGamepadModalOpen}
 		/>
 		
-		<div class="mx-4 my-2 flex-8 rounded-3xl bg-indigo-50">Front camera</div>
-		<div class="mx-4 my-2 flex-8 rounded-3xl bg-indigo-50">Back camera</div>
+		<div class="mx-4 my-2 flex-8 rounded-3xl bg-indigo-50 overflow-hidden">
+			<VideoStream 
+				streamId="front-camera"
+				frameData={frontCameraFrame}
+				resolution={frontCameraResolution}
+				width="100%"
+				height="100%"
+				label="Front Camera"
+			/>
+		</div>
+		<div class="mx-4 my-2 flex-8 rounded-3xl bg-indigo-50 overflow-hidden">
+			<VideoStream 
+				streamId="rear-camera"
+				frameData={rearCameraFrame}
+				resolution={rearCameraResolution}
+				width="100%"
+				height="100%"
+				label="Rear Camera"
+			/>
+		</div>
 		<div class="flex flex-4 flex-row gap-1">
 			<div class="flex flex-1 flex-col">
 				<!-- Switches -->

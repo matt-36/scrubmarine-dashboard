@@ -84,10 +84,10 @@
         };
 
         // Only send movement commands if significant change or if armed
-        if (isArmed && (Math.abs(movementData.roll) > 0.05 || 
-                        Math.abs(movementData.pitch) > 0.05 || 
-                        Math.abs(movementData.yaw) > 0.05 ||
-                        Math.abs(movementData.throttle) > 0.05)) {
+        if (isArmed && (Math.abs(movementData.roll) > 0.40 || 
+                        Math.abs(movementData.pitch) > 0.40 || 
+                        Math.abs(movementData.yaw) > 0.40 ||
+                        Math.abs(movementData.throttle) > 0.40)) {
             sendGamepadInput({
                 type: 'movement',
                 value: movementData
